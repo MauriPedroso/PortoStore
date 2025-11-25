@@ -1,18 +1,19 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { featuredProducts } from "@/lib/products";
+import { getProductBySlug, getFeaturedProducts } from "@/services/products";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/product-card";
 
 type Params = { slug: string };
 
-export function generateStaticParams() {
-  return featuredProducts.map((p) => ({ slug: p.slug }));
-}
+export default async function ProductPage({ params }: { params: Promise<Params> }) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
 
-export default function ProductPage({ params }: { params: Params }) {
-  const product = featuredProducts.find((p) => p.slug === params.slug);
   if (!product) return notFound();
+
+  // Fetch related products (just featured for now)
+  const relatedProducts = await getFeaturedProducts();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -46,11 +47,11 @@ export default function ProductPage({ params }: { params: Params }) {
         <div className="flex flex-col gap-6">
           <div>
             <h1 className="text-4xl font-black tracking-tight">{product.name}</h1>
-            <p className="text-sm text-muted-foreground mt-2">Ref. 12345-ABC</p>
+            <p className="text-sm text-muted-foreground mt-2">Ref. {product.slug}</p>
           </div>
           <div className="flex items-baseline gap-4">
             <p className="text-4xl font-bold text-primary">${product.price.toFixed(2)}</p>
-            <p className="text-xl line-through text-muted-foreground">$75.00</p>
+            {/* <p className="text-xl line-through text-muted-foreground">$75.00</p> */}
           </div>
           <p className="text-muted-foreground">
             Este producto es un ejemplo migrado a Next.js con shadcn/ui.
@@ -78,7 +79,7 @@ export default function ProductPage({ params }: { params: Params }) {
       <div className="mt-16">
         <h2 className="text-2xl font-bold mb-6">También te podría interesar</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {featuredProducts.map((p) => (
+          {relatedProducts.map((p) => (
             <ProductCard key={p.slug} product={p} />
           ))}
         </div>

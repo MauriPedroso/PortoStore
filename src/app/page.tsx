@@ -1,11 +1,12 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/product-card";
-import { getFeaturedProducts, getCategories } from "@/services/products";
+import { getCategoriesWithProducts, getFeaturedProducts } from "@/services/products";
 
 export default async function Home() {
   const featuredProducts = await getFeaturedProducts();
-  const categories = await getCategories();
+  const categoriesWithProducts = await getCategoriesWithProducts();
 
   return (
     <div>
@@ -59,21 +60,26 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Categorías */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-3xl font-bold text-center mb-10">Comprar por Categoría</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map((c) => (
-            <div key={c.title} className="relative h-80 rounded-lg overflow-hidden group">
-              <Image src={c.image} alt={c.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-black/30" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <h3 className="text-white text-2xl font-bold tracking-wide">{c.title}</h3>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Categorías con Productos */}
+      {categoriesWithProducts.map((category) => (
+        <section key={category.title} className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 border-t">
+          <div className="flex justify-between items-center mb-10">
+            <h2 className="text-3xl font-bold">{category.title}</h2>
+            <Button variant="outline" asChild>
+              <Link href={`/category/${category.title}`}>Ver más</Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {category.products.length > 0 ? (
+              category.products.map((p) => (
+                <ProductCard key={p.slug} product={p} />
+              ))
+            ) : (
+              <p className="col-span-full text-center text-muted-foreground">No hay productos destacados en esta categoría.</p>
+            )}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
