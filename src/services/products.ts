@@ -74,21 +74,25 @@ export async function getCategories(): Promise<Category[]> {
 
     return data.map((c: any) => ({
         title: c.name,
-        image: defaultImages[c.name] || "https://lh3.googleusercontent.com/aida-public/AB6AXuCcy2wgH3Hf73X1BmC_IYLyX2n23WfPd2dz8v98s_8bKJxkQcPXRNHzuAj_PrKja7FafcXDoNXFcmml55XG_wNCcfFUDveUSqdMdY6PCePWmjiXjQwZyPSW0McpsuE203QiaWqinV7S1s13ReJE3hP7IlQPWdYl7kSnn59pB0Q9ZMW0J4bAzHtBlr3oQvS2f-li4CpDkbHyVEHlgsdag-RHu5L1r8OKIqN2ZFOJrStb9iCJdqWULVPZa0B3EQkIY_Pu1okdJBvmVJVF" // Fallback image
+        image: defaultImages[c.name] || 'https://images.unsplash.com/photo-1557821552-17105176677c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHNob3BwaW5nfGVufDB8fDB8fHww',
     }));
+}
+
+export interface CategoryWithProducts extends Category {
+    products: Product[];
 }
 
 export async function getProductsByCategory(categoryName: string): Promise<Product[]> {
     const { data, error } = await supabase
         .from('products')
         .select(`
-      product_id,
-      name,
-      sku_base,
-      product_prices (price),
-      images (url),
-      categories!inner (name)
-    `)
+            product_id,
+            name,
+            sku_base,
+            product_prices (price),
+            images (url),
+            categories!inner (name)
+        `)
         .eq('categories.name', categoryName);
 
     if (error) {
@@ -96,17 +100,12 @@ export async function getProductsByCategory(categoryName: string): Promise<Produ
         return [];
     }
 
-
     return data.map((p: any) => ({
         slug: p.sku_base || String(p.product_id),
         name: p.name,
         price: p.product_prices?.[0]?.price || 0,
         image: p.images?.[0]?.url || '',
     }));
-}
-
-export interface CategoryWithProducts extends Category {
-    products: Product[];
 }
 
 export async function getCategoriesWithProducts(): Promise<CategoryWithProducts[]> {
@@ -127,12 +126,12 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     const { data, error } = await supabase
         .from('products')
         .select(`
-      product_id,
-      name,
-      sku_base,
-      product_prices!inner (price),
-      images (url)
-    `)
+            product_id,
+            name,
+            sku_base,
+            product_prices (price),
+            images (url)
+        `)
         .eq('sku_base', slug)
         .single();
 
@@ -141,12 +140,12 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
         const { data: dataId, error: errorId } = await supabase
             .from('products')
             .select(`
-        product_id,
-        name,
-        sku_base,
-        product_prices!inner (price),
-        images (url)
-        `)
+                product_id,
+                name,
+                sku_base,
+                product_prices (price),
+                images (url)
+            `)
             .eq('product_id', slug)
             .single();
 
