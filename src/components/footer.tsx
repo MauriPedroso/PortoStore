@@ -41,7 +41,7 @@ export default function Footer() {
             <h3 className="font-semibold mb-4">Suscríbete</h3>
             <p className="text-sm text-muted-foreground mb-3">Recibe ofertas exclusivas y noticias.</p>
             <form className="flex w-full">
-              <input className="flex-grow min-w-0 rounded-l-md border bg-background px-3 py-2" placeholder="Tu correo" type="email" />
+              <input suppressHydrationWarning className="flex-grow min-w-0 rounded-l-md border bg-background px-3 py-2" placeholder="Tu correo" type="email" name="email" autoComplete="email" />
               <button className="px-4 py-2 bg-primary text-primary-foreground rounded-r-md font-semibold" type="submit">Enviar</button>
             </form>
           </div>

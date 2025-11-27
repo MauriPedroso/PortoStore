@@ -1,18 +1,38 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { featuredProducts } from "@/lib/products";
-import { Button } from "@/components/ui/button";
+import { getProductBySlug, getFeaturedProducts } from "@/services/products";
+import { supabase } from "@/lib/supabase";
+import ProductSizeSelector from "@/components/product-size-selector";
+// import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/product-card";
 
 type Params = { slug: string };
 
-export function generateStaticParams() {
-  return featuredProducts.map((p) => ({ slug: p.slug }));
-}
+export default async function ProductPage({ params }: { params: Promise<Params> }) {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
 
-export default function ProductPage({ params }: { params: Params }) {
-  const product = featuredProducts.find((p) => p.slug === params.slug);
   if (!product) return notFound();
+
+  // Fetch related products (just featured for now)
+  const relatedProducts = await getFeaturedProducts();
+
+  // Fetch stock per size for this product
+  const { data: sizeRows } = await supabase
+    .from('product_sizes')
+    .select('size_id,stock')
+    .eq('product_id', product.product_id);
+  const stockBySizeId: Record<number, number> = {};
+  (sizeRows || []).forEach((r: { size_id: number; stock: number }) => { stockBySizeId[r.size_id] = Number(r.stock) || 0; });
+  const sizes = [
+    { size_id: 2, name: 'XS' },
+    { size_id: 3, name: 'S' },
+    { size_id: 4, name: 'M' },
+    { size_id: 5, name: 'L' },
+    { size_id: 6, name: 'XL' },
+    { size_id: 7, name: 'XXL' },
+  ];
+  const hasAnySizeStock = (sizeRows || []).some((r: { size_id: number; stock: number }) => r.size_id !== 8);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -46,31 +66,19 @@ export default function ProductPage({ params }: { params: Params }) {
         <div className="flex flex-col gap-6">
           <div>
             <h1 className="text-4xl font-black tracking-tight">{product.name}</h1>
-            <p className="text-sm text-muted-foreground mt-2">Ref. 12345-ABC</p>
+            <p className="text-sm text-muted-foreground mt-2">Ref. {product.slug}</p>
           </div>
           <div className="flex items-baseline gap-4">
             <p className="text-4xl font-bold text-primary">${product.price.toFixed(2)}</p>
-            <p className="text-xl line-through text-muted-foreground">$75.00</p>
+            {/* <p className="text-xl line-through text-muted-foreground">$75.00</p> */}
           </div>
           <p className="text-muted-foreground">
             Este producto es un ejemplo migrado a Next.js con shadcn/ui.
             Selecciona opciones y agrega al carrito.
           </p>
-          <div className="grid grid-cols-4 gap-3">
-            {["XS", "S", "M", "L"].map((t) => (
-              <button key={t} className="p-3 rounded-lg border hover:border-primary">
-                {t}
-              </button>
-            ))}
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <div className="flex items-center border rounded-lg p-2">
-              <button className="px-2">-</button>
-              <input className="w-10 text-center bg-transparent" defaultValue={1} />
-              <button className="px-2">+</button>
-            </div>
-            <Button className="flex-grow">Agregar al Carrito</Button>
-          </div>
+          {hasAnySizeStock && (
+            <ProductSizeSelector sizes={sizes} stockBySizeId={stockBySizeId} productId={product.product_id} price={product.price} />
+          )}
         </div>
       </div>
 
@@ -78,7 +86,7 @@ export default function ProductPage({ params }: { params: Params }) {
       <div className="mt-16">
         <h2 className="text-2xl font-bold mb-6">También te podría interesar</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {featuredProducts.map((p) => (
+          {relatedProducts.map((p) => (
             <ProductCard key={p.slug} product={p} />
           ))}
         </div>

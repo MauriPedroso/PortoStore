@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ShoppingBag, Search, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +11,7 @@ import {
   SheetHeader,
 } from "@/components/ui/sheet";
 import ThemeToggle from "./theme-toggle";
+import { getCartCount } from "@/lib/utils";
 
 const links = [
   { href: "/", label: "Inicio" },
@@ -20,6 +22,18 @@ const links = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(() => getCartCount());
+  const pathname = usePathname();
+  useEffect(() => {
+    const onUpdate = () => setCartCount(getCartCount());
+    window.addEventListener("storage", onUpdate);
+    window.addEventListener("cart_updated", onUpdate as EventListener);
+    return () => {
+      window.removeEventListener("storage", onUpdate);
+      window.removeEventListener("cart_updated", onUpdate as EventListener);
+    };
+  }, []);
+  if (pathname?.startsWith("/admin")) return null;
   return (
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
@@ -45,8 +59,13 @@ export default function Navbar() {
             <User className="size-5" />
           </Button>
           <Link href="/cart" aria-label="Carrito" className="inline-flex">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="relative">
               <ShoppingBag className="size-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] px-1 flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
             </Button>
           </Link>
           <ThemeToggle />

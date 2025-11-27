@@ -1,9 +1,13 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/product-card";
-import { featuredProducts } from "@/lib/products";
+import { getCategoriesWithProducts, getFeaturedProducts } from "@/services/products";
 
-export default function Home() {
+export default async function Home() {
+  const featuredProducts = await getFeaturedProducts();
+  const categoriesWithProducts = await getCategoriesWithProducts();
+
   return (
     <div>
       {/* Hero */}
@@ -56,37 +60,26 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categorías */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-3xl font-bold text-center mb-10">Comprar por Categoría</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            {
-              title: "Vestidos",
-              image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuAfkyqJKnoCI6H_Ae8RrwODVEJyWCSQZt-YhDL892UcPI4tVMwtnss8eqaf80x10DlYkOKz_SJBXWkeWGyJrYpQZN5S6Dltl4m5j2cm8lkAtbd7kEUEe783xT4ubSHsMdSGlolNyDu1vA6SXoFY7hqH7S1Zd5obzuqNZ8lNLFbi4euJ0sz8iWg3zhFKoqQEvaEN9d725ScGbdUj4nkPbNAoCUKGwGCIc9VNtuUshPZXZ5VKu8pVO1PktNTCzAz3S9pjAkVl9DuIc-uH",
-            },
-            {
-              title: "Camisetas",
-              image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuCMAFWuPLupBVqtm5x43w2aq4Mg8ydFJET8CEtVuQtmDA1-iAcMsJfAbfEcXcigSsZkaKP-GQPzPhYStYtcGbkizFglRMCRxY6Vbro7YWs0qzTiFeWkZX0PBtkGv4f8RH7gnriJ5CQB87JL7RC7wpsbhRK6ItjyRKQ6MoJw_kUTuUUkh-75plilkq-Xka2Ro-LGckVOQKRfh-26FzZqsKibqJBCDs0uMnvdkeOAHB4K0oSm_g2RfwyAVnxTzVfU4WTIytfeHJNwfxhV",
-            },
-            {
-              title: "Accesorios",
-              image:
-                "https://lh3.googleusercontent.com/aida-public/AB6AXuCSO5iVuogDxad87V7DFkHPeraQ31_CMDZCDcpaCUpP5oYZuwpCaCXoKq7KYjyAD9zccNrwCJFZsGJ8S7vu-dd6hRUoXXguH8tGJM4CumRQAke2Je4Gt08gcHJ_jZvUCd0V-FW1A1wXj_j1ZcwT2-67L2mQmd0M1dP3t94zczXSgliAKnC-MZcsIxUaet35AKDDnBvUL9u49hzNOk6Hl4su05urbOC1Tmeyd43FDFWEIsSYJHTPPrV499grptQ-r0wY_6bkdBcBmEje",
-            },
-          ].map((c) => (
-            <div key={c.title} className="relative h-80 rounded-lg overflow-hidden group">
-              <Image src={c.image} alt={c.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
-              <div className="absolute inset-0 bg-black/30" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <h3 className="text-white text-2xl font-bold tracking-wide">{c.title}</h3>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Categorías con Productos */}
+      {categoriesWithProducts.map((category) => (
+        <section key={category.title} className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 border-t">
+          <div className="flex justify-between items-center mb-10">
+            <h2 className="text-3xl font-bold">{category.title}</h2>
+            <Button variant="outline" asChild>
+              <Link href={`/category/${category.title}`}>Ver más</Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {category.products.length > 0 ? (
+              category.products.map((p) => (
+                <ProductCard key={p.slug} product={p} />
+              ))
+            ) : (
+              <p className="col-span-full text-center text-muted-foreground">No hay productos destacados en esta categoría.</p>
+            )}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

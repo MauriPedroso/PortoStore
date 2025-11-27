@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import type { Product } from "@/lib/products";
+import type { Product } from "@/services/products";
 
 export default function ProductCard({ product }: { product: Product }) {
   return (
