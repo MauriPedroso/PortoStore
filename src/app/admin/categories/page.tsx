@@ -55,8 +55,9 @@ export default async function AdminCategoriesPage() {
                                     <TableCell>{category.category_id}</TableCell>
                                     <TableCell className="font-medium">{category.name}</TableCell>
                                     <TableCell className="text-right">
-                                        {/* Add Edit/Delete buttons later */}
-                                        <Button variant="ghost" size="sm">Editar</Button>
+                                        <Link href={`/admin/categories/${category.category_id}/edit`}>
+                                            <Button variant="ghost" size="sm">Editar</Button>
+                                        </Link>
                                     </TableCell>
                                 </TableRow>
                             ))}

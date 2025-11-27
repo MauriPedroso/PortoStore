@@ -14,7 +14,8 @@ async function getProducts() {
         product_id,
         name,
         sku_base,
-        categories (name)
+        categories (name),
+        product_prices (price)
     `)
         .order('created_at', { ascending: false });
 
@@ -49,9 +50,10 @@ export default async function AdminProductsPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>SKU</TableHead>
-                                <TableHead>Nombre</TableHead>
-                                <TableHead>Categoría</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Categoría</TableHead>
+                        <TableHead>Precio</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -59,13 +61,20 @@ export default async function AdminProductsPage() {
                                 <TableRow key={product.product_id}>
                                     <TableCell className="font-mono text-xs">{product.sku_base || '-'}</TableCell>
                                     <TableCell className="font-medium">{product.name}</TableCell>
-                                    <TableCell>
-                                        {Array.isArray(product.categories)
-                                            ? product.categories.map((c: any) => c.name).join(', ')
-                                            : (product.categories as any)?.name || '-'}
-                                    </TableCell>
+                                <TableCell>
+                                    {Array.isArray(product.categories)
+                                            ? product.categories.map((c: { name: string }) => c.name).join(', ')
+                                            : (product.categories as { name: string } | null)?.name || '-'}
+                                </TableCell>
+                                <TableCell>
+                                    {Array.isArray(product.product_prices) && product.product_prices.length > 0
+                                        ? `$${Number(product.product_prices[0].price || 0).toFixed(2)}`
+                                        : '-'}
+                                </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm">Editar</Button>
+                                        <Link href={`/admin/products/${product.product_id}/edit`}>
+                                            <Button variant="ghost" size="sm">Editar</Button>
+                                        </Link>
                                     </TableCell>
                                 </TableRow>
                             ))}

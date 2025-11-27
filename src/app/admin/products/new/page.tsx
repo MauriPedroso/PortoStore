@@ -23,6 +23,9 @@ export default function NewProductPage() {
     const [units, setUnits] = useState<any[]>([]);
     const [paymentTypes, setPaymentTypes] = useState<any[]>([]);
     const [sizes, setSizes] = useState<any[]>([]);
+    const [selectedSizeIds, setSelectedSizeIds] = useState<number[]>([]);
+    const [sizeStock, setSizeStock] = useState<Record<number, number>>({});
+    const fixedSizeNames = ["XS", "S", "M", "L", "XL", "XXL", "Sin talle"];
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
     const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
@@ -54,7 +57,15 @@ export default function NewProductPage() {
             if (cats.data) setCategories(cats.data);
             if (ms.data) setUnits(ms.data);
             if (pts.data) setPaymentTypes(pts.data);
-            if (szs.data) setSizes(szs.data);
+            if (szs.data) {
+                let current = szs.data;
+                const missing = fixedSizeNames.filter(n => !current.find((s: any) => String(s.name).toLowerCase() === n.toLowerCase()));
+                if (missing.length > 0) {
+                    const { data: created } = await supabase.from('sizes').insert(missing.map(n => ({ name: n }))).select('*');
+                    if (created) current = [...current, ...created];
+                }
+                setSizes(current);
+            }
         }
         fetchData();
     }, []);
@@ -101,38 +112,28 @@ export default function NewProductPage() {
                 if (imageError) console.error("Error saving image:", imageError);
             }
 
-            // 3. Insert Prices
-            const priceInserts = paymentTypes.map(pt => {
-                const price = formData.get(`price_${pt.payment_type_id}`);
-                if (price && Number(price) > 0) {
-                    return {
-                        product_id: productId,
-                        payment_type_id: pt.payment_type_id,
-                        price: Number(price)
-                    };
-                }
-                return null;
-            }).filter(Boolean);
-
-            if (priceInserts.length > 0) {
+            // 3. Insert Precio único con descuento opcional
+            const basePrice = Number(formData.get('price') || 0);
+            const discountPercent = Number(formData.get('discount') || 0);
+            const finalPrice = basePrice > 0 ? basePrice * (1 - Math.min(Math.max(discountPercent, 0), 100) / 100) : 0;
+            if (finalPrice > 0 && paymentTypes.length > 0) {
+                const defaultPaymentTypeId = paymentTypes[0].payment_type_id;
                 const { error: priceError } = await supabase
                     .from('product_prices')
-                    .insert(priceInserts);
+                    .insert([{ product_id: productId, payment_type_id: defaultPaymentTypeId, price: finalPrice }]);
                 if (priceError) throw priceError;
             }
 
-            // 4. Insert Stock (Sizes)
-            const stockInserts = sizes.map(size => {
-                const stock = formData.get(`stock_${size.size_id}`);
-                if (stock && Number(stock) >= 0) {
-                    return {
-                        product_id: productId,
-                        size_id: size.size_id,
-                        stock: Number(stock)
-                    };
-                }
-                return null;
-            }).filter(Boolean);
+            const stockInserts = sizes
+                .filter(s => selectedSizeIds.includes(s.size_id))
+                .map(size => {
+                    const stock = formData.get(`stock_${size.size_id}`);
+                    if (stock && Number(stock) >= 0) {
+                        return { product_id: productId, size_id: size.size_id, stock: Number(stock) };
+                    }
+                    return null;
+                })
+                .filter(Boolean) as any[];
 
             if (stockInserts.length > 0) {
                 const { error: stockError } = await supabase
@@ -281,44 +282,80 @@ export default function NewProductPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Precios</CardTitle>
-                        <CardDescription>Definí los precios por tipo de pago.</CardDescription>
+                        <CardTitle>Precio y descuento</CardTitle>
+                        <CardDescription>Definí el precio y un descuento opcional.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-4">
-                        {paymentTypes.map(pt => (
-                            <div key={pt.payment_type_id} className="grid grid-cols-3 items-center gap-4">
-                                <Label className="col-span-1">{pt.name}</Label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    name={`price_${pt.payment_type_id}`}
-                                    placeholder="0.00"
-                                    className="col-span-2"
-                                />
-                            </div>
-                        ))}
-                        {paymentTypes.length === 0 && <p className="text-sm text-muted-foreground">No hay tipos de pago definidos.</p>}
+                    <CardContent className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label htmlFor="price">Precio</Label>
+                            <Input id="price" name="price" type="number" step="0.01" placeholder="0.00" />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="discount">Descuento (%)</Label>
+                            <Input id="discount" name="discount" type="number" step="1" min="0" max="100" placeholder="0" />
+                        </div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
                         <CardTitle>Inventario (Talles)</CardTitle>
-                        <CardDescription>Definí el stock inicial por talle.</CardDescription>
+                        <CardDescription>Seleccioná talles y definí cantidades.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
-                        {sizes.map(size => (
-                            <div key={size.size_id} className="grid grid-cols-3 items-center gap-4">
-                                <Label className="col-span-1">{size.name}</Label>
-                                <Input
-                                    type="number"
-                                    name={`stock_${size.size_id}`}
-                                    placeholder="0"
-                                    className="col-span-2"
-                                />
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {fixedSizeNames.map(label => {
+                                const size = sizes.find(s => String(s.name).toLowerCase() === label.toLowerCase());
+                                const id = size?.size_id as number | undefined;
+                                const checked = id ? selectedSizeIds.includes(id) : false;
+                                return (
+                                    <label key={label} className="flex items-center gap-2 text-sm">
+                                        <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={async () => {
+                                                let targetId = id;
+                                                if (!targetId) {
+                                                    const { data: created } = await supabase
+                                                        .from('sizes')
+                                                        .insert([{ name: label }])
+                                                        .select('*')
+                                                        .single();
+                                                    if (created) {
+                                                        targetId = (created as any).size_id as number;
+                                                        setSizes(prev => [...prev, created as any]);
+                                                    }
+                                                }
+                                                if (!targetId) return;
+                                                setSelectedSizeIds(prev => checked ? prev.filter(x => x !== targetId!) : [...prev, targetId!]);
+                                            }}
+                                        />
+                                        <span>{label}</span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                        <div className="grid gap-4">
+                            {sizes.filter(s => selectedSizeIds.includes(s.size_id)).map(size => (
+                                <div key={size.size_id} className="grid grid-cols-3 items-center gap-4">
+                                    <Label className="col-span-1">{size.name}</Label>
+                                    <Input
+                                        type="number"
+                                        name={`stock_${size.size_id}`}
+                                        placeholder="0"
+                                        onChange={(e) => {
+                                            const val = Number(e.target.value || 0);
+                                            setSizeStock(prev => ({ ...prev, [size.size_id]: val }));
+                                        }}
+                                        className="col-span-2"
+                                    />
+                                </div>
+                            ))}
+                            {sizes.length === 0 && <p className="text-sm text-muted-foreground">No hay talles definidos.</p>}
+                            <div className="text-sm text-muted-foreground">
+                                Cantidad total: {selectedSizeIds.reduce((acc, id) => acc + (sizeStock[id] || 0), 0)}
                             </div>
-                        ))}
-                        {sizes.length === 0 && <p className="text-sm text-muted-foreground">No hay talles definidos.</p>}
+                        </div>
                     </CardContent>
                 </Card>
 
