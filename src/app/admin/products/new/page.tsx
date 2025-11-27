@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
-import { CldUploadButton, CldUploadWidget } from "next-cloudinary";
+import { CldUploadWidget } from "next-cloudinary";
 
 export default function NewProductPage() {
     const router = useRouter();
@@ -46,6 +46,7 @@ export default function NewProductPage() {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
     const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+    const [lastUploadUrl, setLastUploadUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     function removeImage(index: number) {
         setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
@@ -58,7 +59,7 @@ export default function NewProductPage() {
         setUploadedImageUrls([]);
     }
 
-    const uploadPreset = "PortoStore"
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "porto_store"
 
     useEffect(() => {
         async function fetchData() {
@@ -259,10 +260,21 @@ export default function NewProductPage() {
                                 ))}
                             </div>
                             <div className="flex gap-2">
-                                <CldUploadWidget uploadPreset="porto_store">
+                                <CldUploadWidget
+                                    uploadPreset={uploadPreset}
+                                    onSuccess={(result) => {
+                                        const info = (result as { info?: { secure_url?: string; url?: string } }).info;
+                                        const url = info?.secure_url || info?.url;
+                                        if (url) {
+                                            setLastUploadUrl(url);
+                                            setUploadedImageUrls(prev => [...prev, url].slice(0, 3));
+                                            setPreviews(prev => [...prev, url].slice(0, 3));
+                                        }
+                                    }}
+                                >
                                     {({ open }) => {
                                         return (
-                                            <button onClick={() => open()}>
+                                            <button type="button" onClick={() => open()}>
                                                 Upload an Image
                                             </button>
                                         );
@@ -270,6 +282,7 @@ export default function NewProductPage() {
                                 </CldUploadWidget>
                                 <Button type="button" variant="outline" onClick={clearAllImages} disabled={selectedFiles.length === 0 && previews.length === 0 && uploadedImageUrls.length === 0}>Quitar todas</Button>
                             </div>
+                          
                         </div>
                     </CardContent>
                 </Card>
