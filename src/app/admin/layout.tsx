@@ -29,35 +29,35 @@ export default function AdminLayout({
                             className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                         >
                             <LayoutDashboard className="h-4 w-4" />
-                            Dashboard
+                            Panel
                         </Link>
                         <Link
                             href="/admin/products"
                             className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                         >
                             <Package className="h-4 w-4" />
-                            Products
+                            Productos
                         </Link>
                         <Link
                             href="/admin/categories"
                             className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                         >
                             <Tags className="h-4 w-4" />
-                            Categories
+                            Categorías
                         </Link>
                     </nav>
                 </div>
                 <div className="mt-auto p-4">
                     <Button variant="outline" className="w-full justify-start gap-2">
                         <LogOut className="h-4 w-4" />
-                        Exit Admin
+                        Salir del Admin
                     </Button>
                 </div>
             </aside>
-            <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+            <div className="flex flex-col flex-1 sm:gap-4 sm:py-4">
                 <header className="sticky top-0 z-30 flex h-14 items-center border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
                     <div className="w-full max-w-7xl mx-auto">
-                        <h1 className="text-lg font-semibold md:text-xl">Admin Dashboard</h1>
+                        <h1 className="text-lg font-semibold md:text-xl">Panel de Administración</h1>
                     </div>
                 </header>
                 <main className="grid flex-1 gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 w-full max-w-7xl mx-auto">

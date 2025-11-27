@@ -27,28 +27,26 @@ export default async function AdminCategoriesPage() {
     return (
         <div className="grid gap-4">
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">Categories</h1>
+                <h1 className="text-lg font-semibold md:text-2xl">Categorías</h1>
                 <Link href="/admin/categories/new">
                     <Button className="gap-2">
                         <Plus className="h-4 w-4" />
-                        Add Category
+                        Agregar Categoría
                     </Button>
                 </Link>
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>All Categories</CardTitle>
-                    <CardDescription>
-                        Manage your product categories.
-                    </CardDescription>
+                    <CardTitle>Todas las Categorías</CardTitle>
+                    <CardDescription>Gestioná las categorías de productos.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>ID</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -58,14 +56,14 @@ export default async function AdminCategoriesPage() {
                                     <TableCell className="font-medium">{category.name}</TableCell>
                                     <TableCell className="text-right">
                                         {/* Add Edit/Delete buttons later */}
-                                        <Button variant="ghost" size="sm">Edit</Button>
+                                        <Button variant="ghost" size="sm">Editar</Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {categories.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={3} className="text-center text-muted-foreground">
-                                        No categories found. Create one to get started.
+                                        No hay categorías. Creá una para empezar.
                                     </TableCell>
                                 </TableRow>
                             )}

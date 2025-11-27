@@ -8,7 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
+import { X } from "lucide-react";
 
 export default function NewProductPage() {
     const router = useRouter();
@@ -20,6 +22,21 @@ export default function NewProductPage() {
     const [units, setUnits] = useState<any[]>([]);
     const [paymentTypes, setPaymentTypes] = useState<any[]>([]);
     const [sizes, setSizes] = useState<any[]>([]);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [previews, setPreviews] = useState<string[]>([]);
+    const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+    const [uploadingImages, setUploadingImages] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    function removeImage(index: number) {
+        setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+        setPreviews((prev) => prev.filter((_, i) => i !== index));
+        setUploadedImageUrls((prev) => prev.filter((_, i) => i !== index));
+    }
+    function clearAllImages() {
+        setSelectedFiles([]);
+        setPreviews([]);
+        setUploadedImageUrls([]);
+    }
 
     useEffect(() => {
         async function fetchData() {
@@ -49,10 +66,10 @@ export default function NewProductPage() {
         const sku_base = formData.get('sku_base') as string;
         const category_id = formData.get('category_id');
         const measurement_unit_id = formData.get('measurement_unit_id');
-        const imageUrl = formData.get('image_url') as string;
+        const imageUrls = uploadedImageUrls;
 
         if (!name) {
-            setError("Name is required");
+            setError("El nombre es obligatorio");
             setLoading(false);
             return;
         }
@@ -74,15 +91,9 @@ export default function NewProductPage() {
             if (productError) throw productError;
             const productId = productData.product_id;
 
-            // 2. Insert Image
-            if (imageUrl) {
-                const { error: imageError } = await supabase
-                    .from('images')
-                    .insert([{
-                        product_id: productId,
-                        url: imageUrl,
-                        alt_text: name
-                    }]);
+            if (imageUrls.length > 0) {
+                const inserts = imageUrls.slice(0, 3).map((url) => ({ product_id: productId, url, alt_text: name }));
+                const { error: imageError } = await supabase.from('images').insert(inserts);
                 if (imageError) console.error("Error saving image:", imageError);
             }
 
@@ -130,7 +141,7 @@ export default function NewProductPage() {
             router.refresh();
         } catch (e: any) {
             console.error(e);
-            setError(e.message || "Failed to create product");
+            setError(e.message || "No se pudo crear el producto");
         } finally {
             setLoading(false);
         }
@@ -139,16 +150,16 @@ export default function NewProductPage() {
     return (
         <div className="grid gap-4 max-w-4xl w-full mx-auto pb-10">
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">New Product</h1>
+                <h1 className="text-lg font-semibold md:text-2xl">Nuevo Producto</h1>
             </div>
             <form onSubmit={onSubmit} className="grid gap-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Basic Information</CardTitle>
+                        <CardTitle>Información Básica</CardTitle>
                     </CardHeader>
                     <CardContent className="grid gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="name">Name *</Label>
+                            <Label htmlFor="name">Nombre *</Label>
                             <Input id="name" name="name" required />
                         </div>
                         <div className="grid gap-2">
@@ -156,15 +167,15 @@ export default function NewProductPage() {
                             <Input id="sku_base" name="sku_base" />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label htmlFor="description">Descripción</Label>
                             <Textarea id="description" name="description" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="category_id">Category</Label>
+                                <Label htmlFor="category_id">Categoría</Label>
                                 <Select name="category_id">
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select category" />
+                                        <SelectValue placeholder="Seleccioná categoría" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {categories.map(c => (
@@ -176,10 +187,10 @@ export default function NewProductPage() {
                                 </Select>
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="measurement_unit_id">Unit</Label>
+                                <Label htmlFor="measurement_unit_id">Unidad</Label>
                                 <Select name="measurement_unit_id">
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select unit" />
+                                        <SelectValue placeholder="Seleccioná unidad" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {units.map(u => (
@@ -192,17 +203,81 @@ export default function NewProductPage() {
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="image_url">Image URL</Label>
-                            <Input id="image_url" name="image_url" placeholder="https://..." />
-                            <p className="text-xs text-muted-foreground">Enter a direct link to an image.</p>
+                            <Label>Imágenes del Producto (máximo 3)</Label>
+                            <div
+                                className="border border-dashed rounded-md p-6 text-center cursor-pointer select-none"
+                                onClick={() => fileInputRef.current?.click()}
+                                onDragOver={(e) => { e.preventDefault(); }}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                                    const limit = 3 - selectedFiles.length;
+                                    const toAdd = files.slice(0, Math.max(0, limit));
+                                    const nextFiles = [...selectedFiles, ...toAdd];
+                                    setSelectedFiles(nextFiles);
+                                    const nextPreviews = [...previews, ...toAdd.map(f => URL.createObjectURL(f))].slice(0, 3);
+                                    setPreviews(nextPreviews);
+                                }}
+                            >
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    ref={fileInputRef}
+                                    onChange={(e) => {
+                                        const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
+                                        const limit = 3 - selectedFiles.length;
+                                        const toAdd = files.slice(0, Math.max(0, limit));
+                                        const nextFiles = [...selectedFiles, ...toAdd];
+                                        setSelectedFiles(nextFiles);
+                                        const nextPreviews = [...previews, ...toAdd.map(f => URL.createObjectURL(f))].slice(0, 3);
+                                        setPreviews(nextPreviews);
+                                    }}
+                                />
+                                <p className="text-sm">Arrastrá y soltá o hacé click para seleccionar</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                {previews.map((src, i) => (
+                                    <div key={i} className="relative h-24 w-full overflow-hidden rounded-md border">
+                                        <Image src={src} alt="Preview" fill className="object-cover" />
+                                        <button type="button" className="absolute top-1 right-1 rounded-xs bg-background/70 border p-1" onClick={() => removeImage(i)}>
+                                            <X className="size-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    type="button"
+                                    disabled={uploadingImages || selectedFiles.length === 0}
+                                    onClick={async () => {
+                                        setUploadingImages(true);
+                                        const urls: string[] = [];
+                                        for (const f of selectedFiles.slice(0, 3)) {
+                                            const fd = new FormData();
+                                            fd.append("file", f);
+                                            fd.append("folder", "portostore/products");
+                                            const res = await fetch("/api/upload", { method: "POST", body: fd });
+                                            const json = await res.json();
+                                            if (res.ok && json.url) urls.push(json.url);
+                                        }
+                                        setUploadedImageUrls(urls);
+                                        setUploadingImages(false);
+                                    }}
+                                >
+                                    {uploadingImages ? "Subiendo imágenes..." : "Subir imágenes"}
+                                </Button>
+                                <Button type="button" variant="outline" onClick={clearAllImages} disabled={selectedFiles.length === 0 && previews.length === 0 && uploadedImageUrls.length === 0}>Quitar todas</Button>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Pricing</CardTitle>
-                        <CardDescription>Set prices for each payment type.</CardDescription>
+                        <CardTitle>Precios</CardTitle>
+                        <CardDescription>Definí los precios por tipo de pago.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
                         {paymentTypes.map(pt => (
@@ -217,14 +292,14 @@ export default function NewProductPage() {
                                 />
                             </div>
                         ))}
-                        {paymentTypes.length === 0 && <p className="text-sm text-muted-foreground">No payment types defined.</p>}
+                        {paymentTypes.length === 0 && <p className="text-sm text-muted-foreground">No hay tipos de pago definidos.</p>}
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Inventory (Sizes)</CardTitle>
-                        <CardDescription>Set initial stock for each size.</CardDescription>
+                        <CardTitle>Inventario (Talles)</CardTitle>
+                        <CardDescription>Definí el stock inicial por talle.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
                         {sizes.map(size => (
@@ -238,7 +313,7 @@ export default function NewProductPage() {
                                 />
                             </div>
                         ))}
-                        {sizes.length === 0 && <p className="text-sm text-muted-foreground">No sizes defined.</p>}
+                        {sizes.length === 0 && <p className="text-sm text-muted-foreground">No hay talles definidos.</p>}
                     </CardContent>
                 </Card>
 
@@ -249,12 +324,8 @@ export default function NewProductPage() {
                 )}
 
                 <div className="flex justify-end gap-4">
-                    <Button type="button" variant="outline" onClick={() => router.back()}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" disabled={loading}>
-                        {loading ? "Creating..." : "Create Product"}
-                    </Button>
+                    <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
+                    <Button type="submit" disabled={loading}>{loading ? "Creando..." : "Crear Producto"}</Button>
                 </div>
             </form>
         </div>

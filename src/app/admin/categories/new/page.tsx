@@ -22,7 +22,7 @@ export default function NewCategoryPage() {
         const name = formData.get('name') as string;
 
         if (!name) {
-            setError("Name is required");
+            setError("El nombre es obligatorio");
             setLoading(false);
             return;
         }
@@ -38,7 +38,7 @@ export default function NewCategoryPage() {
             router.refresh();
         } catch (e: any) {
             console.error(e);
-            setError(e.message || "Failed to create category");
+            setError(e.message || "No se pudo crear la categoría");
         } finally {
             setLoading(false);
         }
@@ -47,20 +47,18 @@ export default function NewCategoryPage() {
     return (
         <div className="grid gap-4 max-w-2xl mx-auto">
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">New Category</h1>
+                <h1 className="text-lg font-semibold md:text-2xl">Nueva Categoría</h1>
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Category Details</CardTitle>
-                    <CardDescription>
-                        Enter the name of the new category.
-                    </CardDescription>
+                    <CardTitle>Detalles de la Categoría</CardTitle>
+                    <CardDescription>Ingresá el nombre de la nueva categoría.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={onSubmit} className="grid gap-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input id="name" name="name" placeholder="e.g. T-Shirts" required />
+                            <Label htmlFor="name">Nombre</Label>
+                            <Input id="name" name="name" placeholder="ej.: Remeras" required />
                         </div>
 
                         {error && (
@@ -71,10 +69,10 @@ export default function NewCategoryPage() {
 
                         <div className="flex justify-end gap-4">
                             <Button type="button" variant="outline" onClick={() => router.back()}>
-                                Cancel
+                                Cancelar
                             </Button>
                             <Button type="submit" disabled={loading}>
-                                {loading ? "Creating..." : "Create Category"}
+                                {loading ? "Creando..." : "Crear Categoría"}
                             </Button>
                         </div>
                     </form>

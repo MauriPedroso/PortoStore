@@ -4,16 +4,16 @@ import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === "dark";
+  const { resolvedTheme, setTheme } = useTheme();
   return (
     <Button
       variant="ghost"
       size="icon"
       aria-label="Cambiar tema"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
     >
-      {isDark ? <Sun className="size-5" /> : <Moon className="size-5" />}
+      <Sun className="size-5 hidden dark:inline" />
+      <Moon className="size-5 inline dark:hidden" />
     </Button>
   );
 }

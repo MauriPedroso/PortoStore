@@ -31,29 +31,27 @@ export default async function AdminProductsPage() {
     return (
         <div className="grid gap-4">
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">Products</h1>
+                <h1 className="text-lg font-semibold md:text-2xl">Productos</h1>
                 <Link href="/admin/products/new">
                     <Button className="gap-2">
                         <Plus className="h-4 w-4" />
-                        Add Product
+                        Agregar Producto
                     </Button>
                 </Link>
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>All Products</CardTitle>
-                    <CardDescription>
-                        Manage your store inventory.
-                    </CardDescription>
+                    <CardTitle>Todos los Productos</CardTitle>
+                    <CardDescription>Gestioná el inventario.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>SKU</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead>Categoría</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -67,14 +65,14 @@ export default async function AdminProductsPage() {
                                             : (product.categories as any)?.name || '-'}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm">Edit</Button>
+                                        <Button variant="ghost" size="sm">Editar</Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {products.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center text-muted-foreground">
-                                        No products found. Create one to get started.
+                                        No hay productos. Creá uno para empezar.
                                     </TableCell>
                                 </TableRow>
                             )}
