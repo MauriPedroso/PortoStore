@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
-import { CldUploadButton } from "next-cloudinary";
+import { CldUploadButton, CldUploadWidget } from "next-cloudinary";
 
 export default function NewProductPage() {
     const router = useRouter();
@@ -259,24 +259,15 @@ export default function NewProductPage() {
                                 ))}
                             </div>
                             <div className="flex gap-2">
-                                {uploadPreset ? (
-                                    <CldUploadButton
-                                        uploadPreset={uploadPreset}
-                                        signatureEndpoint="/api/cloudinary-signature"
-                                        options={{ multiple: true, cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY }}
-                                        onUpload={(result: unknown) => {
-                                            const url = (result as { info?: { secure_url?: string } }).info?.secure_url as string | undefined;
-                                            if (!url) return;
-                                            setUploadedImageUrls((prev) => [...prev, url].slice(0, 3));
-                                            setPreviews((prev) => [...prev, url].slice(0, 3));
-                                        }}
-                                        className="rounded-md border px-3 py-2"
-                                    >
-                                        Subir imágenes
-                                    </CldUploadButton>
-                                ) : (
-                                    <Button type="button" disabled className="opacity-60 cursor-not-allowed">Configurar Cloudinary</Button>
-                                )}
+                                <CldUploadWidget uploadPreset="porto_store">
+                                    {({ open }) => {
+                                        return (
+                                            <button onClick={() => open()}>
+                                                Upload an Image
+                                            </button>
+                                        );
+                                    }}
+                                </CldUploadWidget>
                                 <Button type="button" variant="outline" onClick={clearAllImages} disabled={selectedFiles.length === 0 && previews.length === 0 && uploadedImageUrls.length === 0}>Quitar todas</Button>
                             </div>
                         </div>
