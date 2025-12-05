@@ -4,6 +4,7 @@ import {
     LayoutDashboard,
     Package,
     Tags,
+    Receipt,
     Settings,
     LogOut
 } from "lucide-react";
@@ -44,6 +45,13 @@ export default function AdminLayout({
                         >
                             <Tags className="h-4 w-4" />
                             Categorías
+                        </Link>
+                        <Link
+                            href="/admin/orders"
+                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                        >
+                            <Receipt className="h-4 w-4" />
+                            Pedidos
                         </Link>
                     </nav>
                 </div>
